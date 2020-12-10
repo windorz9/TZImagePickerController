@@ -15,7 +15,6 @@
 #import "TZImageManager.h"
 #import "TZVideoPlayerController.h"
 #import "TZGifPhotoPreviewController.h"
-#import "TZLocationManager.h"
 #import <MobileCoreServices/MobileCoreServices.h>
 #import "TZImageRequestOperation.h"
 
@@ -103,8 +102,7 @@ static CGFloat itemMargin = 5;
         [TZCommonTools configBarButtonItem:backItem tzImagePickerVc:tzImagePickerVc];
         [tzImagePickerVc.childViewControllers firstObject].navigationItem.backBarButtonItem = backItem;
     }
-    _showTakePhotoBtn = _model.isCameraRoll && ((tzImagePickerVc.allowTakePicture && tzImagePickerVc.allowPickingImage) || (tzImagePickerVc.allowTakeVideo && tzImagePickerVc.allowPickingVideo));
-    // [self resetCachedAssets];
+
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didChangeStatusBarOrientationNotification:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
     
     self.operationQueue = [[NSOperationQueue alloc] init];
@@ -662,9 +660,7 @@ static CGFloat itemMargin = 5;
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
     // take a photo / 去拍照
     TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
-    if (((tzImagePickerVc.sortAscendingByModificationDate && indexPath.item >= _models.count) || (!tzImagePickerVc.sortAscendingByModificationDate && indexPath.item == 0)) && _showTakePhotoBtn)  {
-        [self takePhoto]; return;
-    }
+
     // preview phote or video / 预览照片或视频
     NSInteger index = indexPath.item;
     if (!tzImagePickerVc.sortAscendingByModificationDate && _showTakePhotoBtn) {
@@ -704,78 +700,6 @@ static CGFloat itemMargin = 5;
 }
 
 #pragma mark - Private Method
-
-/// 拍照按钮点击事件
-- (void)takePhoto {
-    AVAuthorizationStatus authStatus = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
-    if ((authStatus == AVAuthorizationStatusRestricted || authStatus ==AVAuthorizationStatusDenied)) {
-        
-        NSDictionary *infoDict = [TZCommonTools tz_getInfoDictionary];
-        // 无权限 做一个友好的提示
-        NSString *appName = [infoDict valueForKey:@"CFBundleDisplayName"];
-        if (!appName) appName = [infoDict valueForKey:@"CFBundleName"];
-        if (!appName) appName = [infoDict valueForKey:@"CFBundleExecutable"];
-
-        NSString *title = [NSBundle tz_localizedStringForKey:@"Can not use camera"];
-        NSString *message = [NSString stringWithFormat:[NSBundle tz_localizedStringForKey:@"Please allow %@ to access your camera in \"Settings -> Privacy -> Camera\""],appName];
-        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
-        UIAlertAction *cancelAct = [UIAlertAction actionWithTitle:[NSBundle tz_localizedStringForKey:@"Cancel"] style:UIAlertActionStyleCancel handler:nil];
-        [alertController addAction:cancelAct];
-        UIAlertAction *settingAct = [UIAlertAction actionWithTitle:[NSBundle tz_localizedStringForKey:@"Setting"] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:UIApplicationOpenSettingsURLString]];
-        }];
-        [alertController addAction:settingAct];
-        [self.navigationController presentViewController:alertController animated:YES completion:nil];
-    } else if (authStatus == AVAuthorizationStatusNotDetermined) {
-        // fix issue 466, 防止用户首次拍照拒绝授权时相机页黑屏
-        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
-            if (granted) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [self pushImagePickerController];
-                });
-            }
-        }];
-    } else {
-        [self pushImagePickerController];
-    }
-}
-
-// 调用相机
-- (void)pushImagePickerController {
-    // 提前定位
-    TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
-    if (tzImagePickerVc.allowCameraLocation) {
-        __weak typeof(self) weakSelf = self;
-        [[TZLocationManager manager] startLocationWithSuccessBlock:^(NSArray<CLLocation *> *locations) {
-            __strong typeof(weakSelf) strongSelf = weakSelf;
-            strongSelf.location = [locations firstObject];
-        } failureBlock:^(NSError *error) {
-            __strong typeof(weakSelf) strongSelf = weakSelf;
-            strongSelf.location = nil;
-        }];
-    }
-    
-    UIImagePickerControllerSourceType sourceType = UIImagePickerControllerSourceTypeCamera;
-    if ([UIImagePickerController isSourceTypeAvailable: sourceType]) {
-        self.imagePickerVc.sourceType = sourceType;
-        NSMutableArray *mediaTypes = [NSMutableArray array];
-        if (tzImagePickerVc.allowTakePicture) {
-            [mediaTypes addObject:(NSString *)kUTTypeImage];
-        }
-        if (tzImagePickerVc.allowTakeVideo) {
-            [mediaTypes addObject:(NSString *)kUTTypeMovie];
-            self.imagePickerVc.videoMaximumDuration = tzImagePickerVc.videoMaximumDuration;
-        }
-        self.imagePickerVc.mediaTypes= mediaTypes;
-        if (tzImagePickerVc.uiImagePickerControllerSettingBlock) {
-            tzImagePickerVc.uiImagePickerControllerSettingBlock(_imagePickerVc);
-        }
-        [self presentViewController:_imagePickerVc animated:YES completion:nil];
-    } else {
-        NSLog(@"模拟器中无法打开照相机,请在真机中使用");
-    }
-}
-
 - (void)refreshBottomToolBarStatus {
     TZImagePickerController *tzImagePickerVc = (TZImagePickerController *)self.navigationController;
     
@@ -976,7 +900,7 @@ static CGFloat itemMargin = 5;
         return;
     }
     dispatch_async(dispatch_get_main_queue(), ^{
-        [self.model refreshFetchResult];        
+        [self.model refreshFetchResult];
         [self fetchAssetModels];
     });
 }

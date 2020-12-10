@@ -16,7 +16,6 @@
 #import "TZVideoPlayerController.h"
 #import "TZPhotoPreviewController.h"
 #import "TZGifPhotoPreviewController.h"
-#import "TZLocationManager.h"
 #import "TZAssetCell.h"
 #import <MobileCoreServices/MobileCoreServices.h>
 #import "FLAnimatedImage.h"
@@ -59,6 +58,8 @@
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
+// 调用系统拍照时才会走这里创建 imagePickerVC 同时跳转到系统拍摄界面
 - (UIImagePickerController *)imagePickerVc {
     if (_imagePickerVc == nil) {
         _imagePickerVc = [[UIImagePickerController alloc] init];
@@ -86,13 +87,17 @@
     self.view.backgroundColor = [UIColor whiteColor];
     _selectedPhotos = [NSMutableArray array];
     _selectedAssets = [NSMutableArray array];
+    
+    // 配置当前的集合视图配置 -> 配置首页已选择的 图片和视频资源
     [self configCollectionView];
 }
 
+// 是否隐藏导航栏
 - (BOOL)prefersStatusBarHidden {
     return NO;
 }
 
+// 配置首页的集合视图
 - (void)configCollectionView {
     // 如不需要长按排序效果，将LxGridViewFlowLayout类改成UICollectionViewFlowLayout即可
     _layout = [[LxGridViewFlowLayout alloc] init];
@@ -108,6 +113,7 @@
     [_collectionView registerClass:[TZTestCell class] forCellWithReuseIdentifier:@"TZTestCell"];
 }
 
+// 布局子视图 -> 主要是设置了集合视图相关
 - (void)viewDidLayoutSubviews {
     [super viewDidLayoutSubviews];
     NSInteger contentSizeH = 14 * 35 + 20;
@@ -125,8 +131,9 @@
     self.collectionView.frame = CGRectMake(0, collectionViewY, self.view.tz_width, self.view.tz_height - collectionViewY);
 }
 
-#pragma mark UICollectionView
+#pragma mark UICollectionViewDelegate & UICollectionViewDataSource
 
+// 返回拿到内部相册全选的图片和视频资源 -> 需要设置允许图片和视频允许多选
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     if (_selectedPhotos.count >= self.maxCountTF.text.integerValue) {
         return _selectedPhotos.count;
@@ -138,6 +145,7 @@
             }
         }
     }
+    // 多一个选择按钮
     return _selectedPhotos.count + 1;
 }
 
@@ -277,12 +285,6 @@
         // 1.设置目前已经选中的图片数组
         imagePickerVc.selectedAssets = _selectedAssets; // 目前已经选中的图片数组
     }
-    imagePickerVc.allowTakePicture = self.showTakePhotoBtnSwitch.isOn; // 在内部显示拍照按钮
-    imagePickerVc.allowTakeVideo = self.showTakeVideoBtnSwitch.isOn;   // 在内部显示拍视频按
-    imagePickerVc.videoMaximumDuration = 10; // 视频最大拍摄时间
-    [imagePickerVc setUiImagePickerControllerSettingBlock:^(UIImagePickerController *imagePickerController) {
-        imagePickerController.videoQuality = UIImagePickerControllerQualityTypeHigh;
-    }];
     // imagePickerVc.autoSelectCurrentWhenDone = NO;
     
     // imagePickerVc.photoWidth = 1600;
@@ -452,14 +454,14 @@
 - (void)pushImagePickerController {
     // 提前定位
     __weak typeof(self) weakSelf = self;
-    [[TZLocationManager manager] startLocationWithSuccessBlock:^(NSArray<CLLocation *> *locations) {
-        __strong typeof(weakSelf) strongSelf = weakSelf;
-        strongSelf.location = [locations firstObject];
-    } failureBlock:^(NSError *error) {
-        __strong typeof(weakSelf) strongSelf = weakSelf;
-        strongSelf.location = nil;
-    }];
-    
+//    [[TZLocationManager manager] startLocationWithSuccessBlock:^(NSArray<CLLocation *> *locations) {
+//        __strong typeof(weakSelf) strongSelf = weakSelf;
+//        strongSelf.location = [locations firstObject];
+//    } failureBlock:^(NSError *error) {
+//        __strong typeof(weakSelf) strongSelf = weakSelf;
+//        strongSelf.location = nil;
+//    }];
+//
     UIImagePickerControllerSourceType sourceType = UIImagePickerControllerSourceTypeCamera;
     if ([UIImagePickerController isSourceTypeAvailable: UIImagePickerControllerSourceTypeCamera]) {
         self.imagePickerVc.sourceType = sourceType;

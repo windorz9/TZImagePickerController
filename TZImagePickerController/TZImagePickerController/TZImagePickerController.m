@@ -170,9 +170,9 @@
         self.allowPickingOriginalPhoto = YES;
         self.allowPickingVideo = YES;
         self.allowPickingImage = YES;
-        self.allowTakePicture = YES;
-        self.allowTakeVideo = YES;
-        self.videoMaximumDuration = 10 * 60;
+//        self.allowTakePicture = YES;
+//        self.allowTakeVideo = YES;
+//        self.videoMaximumDuration = 10 * 60;
         self.sortAscendingByModificationDate = YES;
         self.autoDismiss = YES;
         self.columnNumber = columnNumber;
@@ -281,7 +281,7 @@
     self.needFixComposition = NO;
     self.statusBarStyle = UIStatusBarStyleLightContent;
     self.cannotSelectLayerColor = [[UIColor whiteColor] colorWithAlphaComponent:0.8];
-    self.allowCameraLocation = YES;
+//    self.allowCameraLocation = YES;
     
     self.iconThemeColor = [UIColor colorWithRed:31 / 255.0 green:185 / 255.0 blue:34 / 255.0 alpha:1.0];
     [self configDefaultBtnTitle];
@@ -592,7 +592,7 @@
     _allowPickingImage = allowPickingImage;
     [TZImagePickerConfig sharedInstance].allowPickingImage = allowPickingImage;
     if (!allowPickingImage) {
-        _allowTakePicture = NO;
+//        _allowTakePicture = NO;
     }
 }
 
@@ -600,7 +600,7 @@
     _allowPickingVideo = allowPickingVideo;
     [TZImagePickerConfig sharedInstance].allowPickingVideo = allowPickingVideo;
     if (!allowPickingVideo) {
-        _allowTakeVideo = NO;
+//        _allowTakeVideo = NO;
     }
 }
 
