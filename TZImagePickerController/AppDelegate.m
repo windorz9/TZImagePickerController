@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "MediaLibraryViewController.h"
 
 @interface AppDelegate ()
 
@@ -16,6 +17,13 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    
+    // 创建一个单独的测试模块来进行测试 ->
+    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    
+    MediaLibraryViewController *mediaLibraryVC = [[MediaLibraryViewController alloc] init];
+    self.window.rootViewController = mediaLibraryVC;
+    [self.window makeKeyAndVisible];
     return YES;
 }
 
